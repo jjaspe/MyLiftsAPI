@@ -1,7 +1,12 @@
 var USERS_COLLECTION = "Users";
 
 (function () {
-    var getUsers = function (req, res, db) {
+    var dbConnection=require('./dbConnection');    
+    dbConnection.db(
+        (database)=>{db=database}
+        );
+        
+    var getUsers = function (req, res) {
         users = db.collection(USERS_COLLECTION).find({}).toArray(function (err, docs) {
             if (err) {
                 handleError(res, err.message, "Failed to get users.");
@@ -12,7 +17,7 @@ var USERS_COLLECTION = "Users";
         return users;
     }
 
-    var postUser = function (req, res, db) {
+    var postUser = function (req, res) {
 
         if (!(req.body.UserName)) {
             handleError(res, "Invalid user input ", "Must provide a username", 400);
@@ -52,7 +57,7 @@ var USERS_COLLECTION = "Users";
 
     }
 
-    var getUser = function (req, res, db, username) {
+    var getUser = function (req, res, username) {
         db.collection(USERS_COLLECTION).find({ UserName: username }).toArray(function (err, docs) {
             if (err) {
                 res.status(404).json(null);
@@ -61,13 +66,13 @@ var USERS_COLLECTION = "Users";
         });
     }
 
-    module.exports.postUser = function (req, res, db) {
-        return postUser(req, res, db);
+    module.exports.postUser = function (req, res) {
+        return postUser(req, res);
     }
-    module.exports.getUsers = function (req, res, db) {
-        return getUsers(req, res, db);
+    module.exports.getUsers = function (req, res) {
+        return getUsers(req, res);
     }
-    module.exports.getUser = function (req, res, db, username) {
-        return getUser(req, res, db, username);
+    module.exports.getUser = function (req, res, username) {
+        return getUser(req, res, username);
     }
 } ());

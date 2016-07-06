@@ -3,7 +3,12 @@ var BODYPARTS_COLLECTION = "Bodyparts";
 (function () {    
     var mongodb = require("mongodb");
     var ObjectID = mongodb.ObjectID;
-    var getBodyParts = function (req, res, db) {
+    var dbConnection=require('./dbConnection');    
+    dbConnection.db(
+        (database)=>{db=database}
+        );
+        
+    var getBodyParts = function (req, res) {
         db.collection(BODYPARTS_COLLECTION).find({}).toArray(function (err, docs) {
             if (err) {
                 handleError(res, err.message, "Failed to get bodyparts.");
@@ -13,7 +18,7 @@ var BODYPARTS_COLLECTION = "Bodyparts";
         })
     }
 
-    var postBodypart = function (req, res, db) {
+    var postBodypart = function (req, res) {
         if (!(req.body.Name)) {
             handleError(res, "Invalid user input ", "Must provide a Name", 400);
         }
@@ -73,12 +78,12 @@ var BODYPARTS_COLLECTION = "Bodyparts";
         });
     }
     
-    module.exports.getBodyParts = function (req, res, db) {
-                return getBodyParts(req, res, db);
+    module.exports.getBodyParts = function (req, res) {
+                return getBodyParts(req, res);
             }
 
-    module.exports.postBodypart = function (req, res, db) {
-                return postBodypart(req, res, db);
+    module.exports.postBodypart = function (req, res) {
+                return postBodypart(req, res);
             }
             
     module.exports.updateBodypartExercises = function (db, bodypartId, exerciseId){

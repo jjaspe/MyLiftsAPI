@@ -2,8 +2,12 @@ var EXERCISES_COLLECTION = "Exercises";
 
 (function () {
     var bodypartsService=require("./bodyparts");
+    var dbConnection=require('./dbConnection');    
+    dbConnection.db(
+        (database)=>{db=database}
+        );
 
-    var getExercises = function (req, res, db) {
+    var getExercises = function (req, res) {
         db.collection(EXERCISES_COLLECTION).find({}).toArray(function (err, docs) {
             if (err) {
                 handleError(res, err.message, "Failed to get exercises.");
@@ -20,7 +24,7 @@ var EXERCISES_COLLECTION = "Exercises";
         return newExercise;
     }
     
-    var postExercise = function (req, res, db) {
+    var postExercise = function (req, res) {
         if (!(req.body.Name)) {
             handleError(res, "Invalid user input ", "Must provide a Name", 400);
         }
@@ -60,11 +64,11 @@ var EXERCISES_COLLECTION = "Exercises";
 
     }
 
-    module.exports.getExercises = function (req, res, db) {
-        return getExercises(req, res, db);
+    module.exports.getExercises = function (req, res) {
+        return getExercises(req, res);
     }
 
-    module.exports.postExercise = function (req, res, db) {
-        return postExercise(req, res, db);
+    module.exports.postExercise = function (req, res) {
+        return postExercise(req, res);
     }
 } ());

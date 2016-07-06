@@ -4,8 +4,12 @@ var SETS_COLLECTION = "Sets";
     handleError = require('./common');
     var mongodb = require("mongodb");
     var ObjectID = mongodb.ObjectID;
-
-    var getSets = function (req, res, db) {
+    var dbConnection=require('./dbConnection');    
+    dbConnection.db(
+        (database)=>{db=database}
+        );
+        
+    var getSets = function (req, res) {
         db.collection(SETS_COLLECTION).find({}).toArray(function (err, docs) {
             if (err) {
                 handleError(res, err.message, "Failed to get sets.");
@@ -15,7 +19,7 @@ var SETS_COLLECTION = "Sets";
         })
     }
 
-    var getSetsByWorkout = function (req, res, db, workoutId) {
+    var getSetsByWorkout = function (req, res, workoutId) {
         db.collection(SETS_COLLECTION).find({}).toArray(function (err, docs) {
             if (err) {
                 handleError(res, err.message, "Failed to get sets.");
@@ -26,63 +30,51 @@ var SETS_COLLECTION = "Sets";
         })
     }
 
-    var saveSet = function (set, res, db) {
+    var saveSet = function (set, res) {
         db.collection(SETS_COLLECTION).find({ _id: new ObjectID(set._id) }).toArray(function (err, docs) {
             if (err) {
-                handleError(res, err.message, "Failed to get Workout.");
+                handleError(res, err.message, "Failed to get Set.");
             } else {
                 var existingSet = docs[0];
                 if (existingSet) {
-                    var updateDoc = CreateWorkout(req.body);
-                    db.collection(WORKOUTS_COLLECTION).updateOne({ Name: req.body.Name }, updateDoc, function (err, doc) {
+                    var updateDoc = set;
+                    db.collection(SETS_COLLECTION).updateOne({ _id: new ObjectID(set._id) }, 
+                    updateDoc, function (err, doc) {
                         if (err) {
-                            handleError(res, err.message, "Failed to update Workout");
+                            handleError(res, err.message, "Failed to update set with id:"+set._id);
                         } else {
-                            res.status(201).json(doc)
+                            return doc
                         }
                     });
                 } else {
-                    var newWorkout = CreateWorkout(req.body)
-                    newWorkout.Created = new Date();
-                    db.collection(WORKOUTS_COLLECTION).insertOne(newWorkout, function (err, doc) {
+                    set.Created = new Date();
+                    db.collection(SETS_COLLECTION).insertOne(set, function (err, doc) {
                         if (err) {
-                            handleError(res, err.message, "Failed to create new Workout.");
+                            handleError(res, err.message, "Failed to create new Set.");
                         } else {
-                            res.status(201).json(doc.ops[0]);
+                            return doc.ops[0];
                         }
                     });
                 }
             }
         });
+    }
+    
+    var getSet = function (setId){
+        db.collection(SETS_COLLECTION).find({_id:setId}).toArray(function (err, docs) {
+            if (err) {
+                console.log(err.message +  ":Failed to get sets.");
+            } else {
+                return docs[0];
+            }
+        })
     }
 
-    var postSet = function (req, res, db) {
-        db.collection(SETS_COLLECTION).find({ Date: req.body.Date, UserId: req.body.UserId }).toArray(function (err, docs) {
-            if (err) {
-                handleError(res, err.message, "Failed to get Workout.");
-            } else {
-                var Workout = docs[0];
-                if (Workout) {
-                    var updateDoc = CreateWorkout(req);
-                    db.collection(WORKOUTS_COLLECTION).updateOne({ Name: req.body.Name }, updateDoc, function (err, doc) {
-                        if (err) {
-                            handleError(res, err.message, "Failed to update Workout");
-                        } else {
-                            res.status(201).json(doc)
-                        }
-                    });
-                } else {
-                    var newWorkout = CreateWorkout(req.body)
-                    newWorkout.Created = new Date();
-                    db.collection(WORKOUTS_COLLECTION).insertOne(newWorkout, function (err, doc) {
-                        if (err) {
-                            handleError(res, err.message, "Failed to create new Workout.");
-                        } else {
-                            res.status(201).json(doc.ops[0]);
-                        }
-                    });
-                }
-            }
-        });
+    var postSet = function (req, res) {
+        saveSet(req.body,res,db);
     }
+    
+    module.exports.postSet=postSet;
+    module.exports.saveSet=saveSet;
+    module.exports.getSets=getSets;
 } ());
