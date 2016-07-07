@@ -15,37 +15,13 @@ var app = express();
 app.use(express.static(__dirname + "/public"));
 app.use(bodyParser.json());
 
+if(process)
+    var port=process.env.port
 // Initialize the app.
-var server = app.listen(8090, function () {
+var server = app.listen(port||8090, function () {
     var port = server.address().port;
     console.log("App now running on port", port);
 });
-
-/*
-dbConnection.startDb(function(err,database){
-    db=database;
-});
-var db = dbConnection.db;
-
-
-// Create a database variable outside of the database connection callback to reuse the connection pool in your app.
-var startDb = function () {
-    if (!process.env.MONGODB_URI)
-        process.env.MONGODB_URI = "mongodb://jjaspe:green123@ds040089.mlab.com:40089/mylifts"
-    // Connect to the database before starting the application server.
-    mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, database) {
-        if (err) {
-            console.log(err);
-            process.exit(1);
-        }
-
-        // Save database object from the callback for reuse.
-        db = database;
-        console.log("Database connection ready");
-    });
-}
-
-//startDb();*/
 
 
 app.post("/Users", function (req, res) {
