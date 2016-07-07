@@ -18,7 +18,6 @@ var USERS_COLLECTION = "Users";
     }
 
     var postUser = function (req, res) {
-
         if (!(req.body.UserName)) {
             handleError(res, "Invalid user input ", "Must provide a username", 400);
         }
@@ -64,6 +63,11 @@ var USERS_COLLECTION = "Users";
             }
             res.status(201).json(docs[0]);
         });
+    }
+    
+    var handleError=function handleError(res, reason, message, code) {
+        console.log("ERROR: " + reason);
+        res.status(code || 500).json({ "error": message });
     }
 
     module.exports.postUser = function (req, res) {

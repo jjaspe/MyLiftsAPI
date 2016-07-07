@@ -9,7 +9,7 @@
                 handleError(res, err, "Failed to get workouts.");
             } else {
                 workouts.forEach((w,i,array)=>setsService.getSetsByWorkout(w._id,(err,sets)=>{
-                    w.Sets=sets;
+                    w.sets=sets;
                     if(i==array.length-1)
                         res.status(200).json(workouts);
                 }));                
