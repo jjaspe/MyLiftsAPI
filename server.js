@@ -16,7 +16,7 @@ app.use(express.static(__dirname + "/public"));
 app.use(bodyParser.json());
 
 if(process)
-    var port=process.env.port
+    var port=process.env.PORT
 // Initialize the app.
 var server = app.listen(port||8090, function () {
     var port = server.address().port;
