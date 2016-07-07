@@ -14,7 +14,6 @@
 
             // Save database object from the callback for reuse.
             db = database;
-            console.log("Database connection ready");
             callback(err,database);
         });
     }

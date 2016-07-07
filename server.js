@@ -8,8 +8,8 @@ var dbConnection = require("./dbConnection");
 var bodyPartsService = require("./bodyparts");
 var usersService = require("./users");
 var exercisesService = require("./exercises");
-var workoutsService = require("./workouts");
-var setsService = require("./sets");
+var workoutController = require("./workouts");
+var setsController = require("./sets");
 
 var app = express();
 app.use(express.static(__dirname + "/public"));
@@ -85,17 +85,17 @@ app.get("/Exercises/GetExercisesByBodypart/:BodypartId", function (req, res) {
 
 
 app.get("/Workouts", function (req, res) {
-    return workoutsService.getWorkouts(req, res);
+    return workoutController.getWorkouts(req, res);
 });
 
 app.get("/Workouts/GetWorkoutsByUser/:Id", function (req, res) {
-    return workoutsService.getWorkoutsByUser(req, res, req.params.UserId);
+    return workoutController.getWorkoutsByUser(req, res, req.params.UserId);
 });
 
 app.post("/Workouts", function (req, res) {
-    return workoutsService.postWorkout(req, res);
+    return workoutController.postWorkout(req, res);
 });
 
 app.get("/Sets", function (req,res) {
-    return setsService.getSets(req,res);
+    return setsController.getSets(req,res);
 });

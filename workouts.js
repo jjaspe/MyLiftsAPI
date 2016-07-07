@@ -1,32 +1,30 @@
-var WORKOUTS_COLLECTION = "Workouts";
-
 (function () {
     handleError=require('./common');
-    setsService = require ('./sets');
-    var dbConnection=require('./dbConnection');    
-    dbConnection.db(
-        (database)=>{db=database}
-        );
+    setsService = require ('./set.service');
+    workoutService = require ('./workout.service');
     
     var getWorkouts = function (req, res) {
-        db.collection(WORKOUTS_COLLECTION).find({}).toArray(function (err, docs) {
+        workoutService.getWorkouts(function(err,workouts){
             if (err) {
-                handleError(res, err.message, "Failed to get workouts.");
+                handleError(res, err, "Failed to get workouts.");
             } else {
-                res.status(200).json(docs);
+                workouts.forEach((w,i,array)=>setsService.getSetsByWorkout(w._id,(err,sets)=>{
+                    w.Sets=sets;
+                    if(i==array.length-1)
+                        res.status(200).json(workouts);
+                }));                
             }
-        })
+        });
     }
     
     var getWorkoutsByUser = function (req, res,userId){
-        db.collection(WORKOUTS_COLLECTION).find({}).toArray(function (err, docs) {
+        workoutService.getWorkoutsByUser(userId,function(err,data){
             if (err) {
-                handleError(res, err.message, "Failed to get workouts.");
+                handleError(res, err, "Failed to get workouts for userId:" + userId);
             } else {
-                var userWorkouts=docs.filter(a=>a.userId==userId);
-                res.status(200).json(userWorkouts);
+                res.status(200).json(data);
             }
-        })
+        });
     }
     
     var GetSetsFromWorkout = function (workout){
@@ -44,57 +42,33 @@ var WORKOUTS_COLLECTION = "Workouts";
         return sets;
     }
 
-    var SetWorkoutSets = function (workout) {
-        var sets = [];
-        if (workout.setGroups) {
-            sets = GetSetsFromSetGroups(workout.setGroups)
-        }
-        workout.setGroups = null;
-        workout.sets = sets.map(a=>a._id);
+    var ResetSetAndSetGroups = function (workout) {
+        workout.setGroups = undefined;
+        workout.sets = undefined;
     }
     
-    var CreateWorkout = function (json,res){
-        var workout=json;
-        SetWorkoutSets(workout);
+    var CreateWorkout = function (workout){
+        ResetSetAndSetGroups(workout);
         workout.LastModified = new Date();
         return workout;
     }
     
     var postWorkout = function (req, res) {
-        var Workout;
-        db.collection(WORKOUTS_COLLECTION).find({ Date: req.body.Date, UserId:req.body.UserId }).toArray(function (err, docs) {
-            if (err) {
-                handleError(res, err.message, "Failed to get Workout.");
-            } else {
-                Workout = docs[0];
-                var sets=GetSetsFromWorkout(req.body);
-                if (Workout) {                    
-                    var updateDoc = CreateWorkout(req.body,res);                    
-                    db.collection(WORKOUTS_COLLECTION).updateOne({ Name: req.body.Name }, updateDoc, function (err, doc) {
-                        if (err) {
-                            handleError(res, err.message, "Failed to update Workout");
-                        } else {
-                            console.log(sets);
-                            sets.forEach(a=>setsService.saveSet(a,res));
-                            res.status(201).json(doc)
-                        }
-                    });
-                    
-                } else {
-                    Workout = CreateWorkout(req.body,res)
-                    Workout.Created = new Date();
-                    db.collection(WORKOUTS_COLLECTION).insertOne(Workout, function (err, doc) {
-                        if (err) {
-                            handleError(res, err.message, "Failed to create new Workout.");
-                        } else {
-                            console.log(sets);
-                            sets.forEach(a=>setsService.saveSet(a,res));
-                            res.status(201).json(doc.ops[0]);
-                        }
-                    });
-                }
+        var workout=req.body;
+        var sets=GetSetsFromWorkout(workout);
+        ResetSetAndSetGroups(workout);
+        workoutService.saveWorkout(workout,function(err,data){
+             if (err) {
+                handleError(res, err, "Failed to get workouts.");
+            } else {  
+                sets.forEach(a=>a.WorkoutId=data._id);              
+                sets.forEach(set=>setsService.saveSet(set,(err,data)=>{
+                    if(err)
+                        console.log(err);
+                }));
+                res.status(201).json(data);
             }
-        });
+        })
     }
     
     module.exports.getWorkoutsByUser = getWorkoutsByUser;
