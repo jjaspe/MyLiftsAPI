@@ -2,10 +2,12 @@ var SETS_COLLECTION = "Sets";
 
 (function () {
     var setService = require('./set.service');
+    var exerciseService = require('./exercise.service');
     
-    var getSetsByWorkout = function (req, res, workoutId) {
+    module.exports.getSetsByWorkout = function (req, res, workoutId) {
         setService.getSetsByWorkout(workoutId, (err, data) => {
-            handleResponse(err,"Failed to get sets",data, res);
+                mapSets(data,(sets)=> handleResponse(err,"Failed to get sets",sets, res)
+            );
         });
     }
 
@@ -17,7 +19,8 @@ var SETS_COLLECTION = "Sets";
 
     module.exports.getSets = function (req, res) {
         setService.getSets( (err,data) => {
-            handleResponse(err,"Failed to get sets",data, res);
+            mapSets(data,(sets)=> handleResponse(err,"Failed to get sets",sets, res));
+            //handleResponse(err,"Failed to get sets",data, res)
         })
     }
 
@@ -25,6 +28,26 @@ var SETS_COLLECTION = "Sets";
         setService.saveSet(req.body, function (err, data) {
             handleResponse(err,"Failed to save set",data, res);
         })
+    }
+    
+    module.exports.deleteSet = function (req,res,setId) {
+        setService.deleteSet(setId,(err,n)=>{
+            handleResponse(err,"error deleting document",n,res);
+        });
+    }
+    
+    var mapSets = function (sets,callback){
+        if(sets && sets.length>0)
+        {
+                sets.forEach((w,i,array)=>exerciseService.getExerciseById(w.ExerciseId,(err,ex)=>{
+                w.Id=w._id;
+                w.exercise=ex;
+                if(i==array.length-1)
+                    callback(sets);
+            }));        
+        }
+        else
+            callback(sets);        
     }
     
     var handleResponse = function (err, errorMessage, data, res) {

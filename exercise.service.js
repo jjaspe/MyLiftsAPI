@@ -1,29 +1,36 @@
 var EXERCISES_COLLECTION = "Exercises";
 
 (function () {
-    var bodypartsService=require("./bodyparts");
-    var dbConnection=require('./dbConnection');    
-    dbConnection.db((database)=>{db=database});
-    var exerciseService = require ('./exercise.service'); 
+    var bodypartsService = require("./bodyparts");
+    var dbConnection = require('./dbConnection');
+    var mongodb = require("mongodb");
+    var ObjectID = mongodb.ObjectID;
+    dbConnection.db((database) => { db = database });
 
-    module.exports.getExercises = function (req, res) {
-        exerciseService.getExercises( (err,data) => handleResponse(err,"Error getting exercises",data,res));
+    module.exports.getExerciseById = function (id, callback) {
+        db.collection(EXERCISES_COLLECTION).find({ _id: new ObjectID(id) }).toArray((err, data) =>
+            handleResponse(err, "Error finding exercise", data[0], callback)
+        );
     }
 
-    var createExercise= function(req){
+    module.exports.getExercises = function (callback) {
+        db.collection(EXERCISES_COLLECTION).find({}).toArray(function (err, docs) {
+            handleResponse(err, "Error getting exercises", docs, callback);
+        })
+    }
+
+    var createExercise = function (req) {
         var newExercise = req.body;
         newExercise.LastModified = new Date();
-        if(newExercise.bodyparts)
-            newExercise.bodyparts = newExercise.bodyparts.map(a => a.Id);
-        else
-            newExercise.bodyparts=[];
+        newExercise.bodyparts = newExercise.bodyparts.map(a => a.Id);
         return newExercise;
     }
-    
+
     module.exports.postExercise = function (req, res) {
         if (!(req.body.Name)) {
-            handleResponse("", "Invalid user input ,Must provide a Name", null,res);
+            handleError(res, "Invalid user input ", "Must provide a Name", 400);
         }
+
         db.collection(EXERCISES_COLLECTION).find({ Name: req.body.Name }).toArray(function (err, docs) {
             if (err) {
                 handleError(res, err.message, "Failed to get Exercise.");
@@ -31,12 +38,12 @@ var EXERCISES_COLLECTION = "Exercises";
                 var Exercise = docs[0];
                 if (Exercise) {
                     var updateDoc = createExercise(req);
-                    db.collection(EXERCISES_COLLECTION).updateOne({ Name: req.body.Name }, updateDoc, function (err, doc) {
+                    db.collection(EXERCISES_COLLECTION).updateOne({ Name: updateDoc.Name }, updateDoc, function (err, doc) {
                         if (err) {
                             handleError(res, err.message, "Failed to update exercise");
                         } else {
                             updateDoc.bodyparts.forEach(
-                                a=>bodypartsService.updateBodypartExercises(db,a,updateDoc._id))
+                                a => bodypartsService.updateBodypartExercises(db, a, updateDoc._id))
                             res.status(201).json(doc)
                         }
                     });
@@ -48,23 +55,20 @@ var EXERCISES_COLLECTION = "Exercises";
                             handleError(res, err.message, "Failed to create new exercise.");
                         } else {
                             newExercise.bodyparts.forEach(
-                                a=>bodypartsService.updateBodypartExercises(db,a,doc.ops[0]._id));
+                                a => bodypartsService.updateBodypartExercises(db, a, newExercise._id))
                             res.status(201).json(doc.ops[0]);
                         }
                     });
                 }
             }
         });
-
-
     }
-    
-    var handleResponse = function (err, errorMessage, data, res) {
-        if (err) {
-            console.log("ERROR: " + err);
-            res.status(500).json({ "error": err+errorMessage });
+
+    var handleResponse = function (error, errorMessage, data, callback) {
+        if (error) {
+            callback(errorMessage + "\r\n" + err.message, null);
         } else {
-            res.status(200).json(data);
+            callback(error, data);
         }
     }
 } ());
